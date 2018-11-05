@@ -1,29 +1,28 @@
 
-# wavernn
-WaveRNN is a technique used to synthesise neural audio much faster than other neural synthesizer by providing rudimentary improvements.
+# wavernn-896
 
-This implementation is based on tensorflow and will require librosa to manipulate raw audio.
+This branch consists of wavernn-896 implementation, it is an easier implementation of it and uses two rnn to generate high fidelity audio.
 
 
-These points provides an intution about the model, how the model has been implented [any inputs on this are most welcome]
+My implementation of RNN consists of 
 
- 1. Input data is taken as float32 based and normalized to 16bit unsigned data.
- 2. 16bit data has been split into two components by using divmod (with floor )
- 3. Two different `RNNs` has been created of `cell-length` 896 as mentioned in the paper, being stacked in 2 layers (have to test number of layers).
- 4. First rnn that synthesize `coarse_data` doesnt need `c(t)`, so input to this is `[batch_size,sequence_length,2]` where currently batch size is 1 with sequence length of 200 and 2 for `[c(t-1),f(t-1)]`
- 5. Second rnn that synthesize `fine_data` needs `c(t)` so currently it is dependent on the `coarse_data` for generation (but it should improve after subscaling). It has an input vector of `[batch_size,sequence_length,3]` where 3 is to store extra `c(t)`
- 6. Output of these `RNNs` are parsed to a dense linear transformation of same length, which is then used passed in to `relu`  to remove negative entries.
- 7. For cost function, currently `softmax_cross_entropy_with_logits_v2` is used but most probably will switch to sparse one.
- 8. Adam is used to optimize the whole network, this initial commit doesnt include intensive hyper parameter testing, so it is using default learning rate.
+	1. Sample audio into 16bit data
+	2. DivMod the sample data to get 8bit questionant(coarse data) and 8bit remainder(fine data)
+	3. Resample both coarse and fine data into frames of 256 units.
+	3. Condition a fully dense layer using 64 bit mel spectogram of audio to get a tensor of output shape 256 (call it K)
+	4. Use K to locally condition coarse rnn
+	5. Use output from coarse rnn to locally condition fine rnn
+	6. Resample coarse and fine rnn to get output signal
+	7. Use 2 softmax, for each of coarse and fine to calculate cross entropy.
+	8. Train the network using Ada-Delta optimizer.
+
 
 ## Tasks
-- [x] Basic implementation, which improves net algorithmic efficiency
-- [ ] Providing support for faster future prediction (On-going)
-- [x] Transfer from notebook based development to OOPS, for better management (WIP)
-- [ ] Sparse Prunification and Sub batched sampling
-- [x] Vocoder Implementation
+- [x] Basic implementation of wavernn, can be used as vocoder easily.
+- [ ] Sparse prunification.
+- [ ] Trained model and some reference outputs.
 
 
-Please go through the issues, there are many conceptual doubts and I would love to hear opinions on those.
+## Support
 
-This repository only provides implementation of the model `WaveRNN` as mentioned [here](https://arxiv.org/abs/1802.08435).
+Please checkout https://kdhingra307.github.io/speech_works for more details or search for issues with #rnn896. if you have any doubt or any feature request, do raise an issue.
