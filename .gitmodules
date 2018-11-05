@@ -1,0 +1,8 @@
+[submodule "root/common"]
+	path = root/common
+	url = https://github.com/kdhingra307/wavernn
+	branch = common
+[submodule "root/model"]
+	path = root/model
+	url = https://github.com/kdhingra307/wavernn
+	branch = rnn
