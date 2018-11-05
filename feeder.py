@@ -36,10 +36,3 @@ class input_feeder:
         except Exception as e:
             print("Meta data not found, check hparams or raise issue on git")
             exit()
-
-
-# if __name__ == "__main__":
-#     f = input_feeder()
-#     sess = tf.Session()
-#     sess.run(f.training_iterator.initializer)
-#     print(sess.run(f.training_iterator.get_next()))

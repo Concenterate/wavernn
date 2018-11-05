@@ -1,8 +1,14 @@
 
+"""
+
+    This file contains all of the hyper parameters used by the wavernn model.
+
+"""
+
 
 class params:
     epochs = 10
-    sample_rate = 22050
+    sample_rate = 22050  # 22KHz audio
     nFft = 1024
     hop_size = 256
     constant_values = 0.
@@ -19,5 +25,4 @@ class params:
     num_of_workers = 8
     bit_rate_in_power = 16
     scale_factor = 4
-    model_type = "wavernn"
     seq_length = 1024
