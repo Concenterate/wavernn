@@ -11,18 +11,23 @@ class params:
     sample_rate = 22050  # 22KHz audio
     nFft = 1024
     hop_size = 256
-    constant_values = 0.
     num_mels = 64
     checkpoint_every = 100
-    curr_index = 0
-    raw_data_dirs = ["/home/pravesh/speech_dataset/speakers/3", ]
+    input_data_dirs = ["/home/pravesh/speech_dataset/speakers/3", ]
     train_data_dir = "training_data/"
-    log_file_name = "log/wavernn.log/"
-    model_file_name = "log/wavernn.model/"
-    meta_data_file_name = "metadata.txt"
-    sequence_units = 256
-    prenet_outp = 256
+    log_dir = "log/"
+
+    # taken from tacotron2 project
+    fmin = 125
+    fmax = 7800
+    max_db = 100
+
+    # specific to preprocessing
     num_of_workers = 8
     bit_rate_in_power = 16
-    scale_factor = 4
-    seq_length = 1024
+    scale_factor = int(hop_size/num_mels)
+
+    # specific to rnn@896
+    cells = [896, 896]
+    dense_layer = [256]
+    max_sequence_length = 1024
