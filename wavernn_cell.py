@@ -9,7 +9,17 @@ class wavernn_cell(RNNCell):
     def __init__(self,
                  coarse_units=pm.seq_cells,
                  fine_units=pm.seq_cells,
-                 train_via_gt=True):
+                 training=True):
+        """
+
+            coarse_units: sequential cell details for coarse sub cell
+            fine_units: sequential cell details for fine sub cell
+            training: whether the loop is training or predicting
+                It is useful because while training, cell expects a tuple of
+                size 3 as input to condition the network using ground truth,
+                while during prediction it expects tuple of size 1 as local
+                condition parameter.
+        """
 
         with variable_scope("coarse"):
             self.coarse_cell = MultiRNNCell(
@@ -21,7 +31,7 @@ class wavernn_cell(RNNCell):
 
         assert coarse_units[-1] == fine_units[-1]
 
-        self.is_gt = train_via_ground_truth
+        self.is_train = training
         self.container = namedtuple('wavernn', ['coarse', 'fine'])
 
     @property
@@ -49,7 +59,10 @@ class wavernn_cell(RNNCell):
                                      input_data[0]], axis=-1,
                                     name="input/coarse")
 
-            if self.is_gt:
+            coarse_output, coarse_state = self.coarse_cell(
+                coarse_input, state.coarse, scope="{}/coarse".format(scope))
+
+            if self.is_train:
                 fine_input = tf.stack([self.current_input[0],
                                        self.current_input[1],
                                        input_data[1]], axis=-1,
@@ -58,24 +71,27 @@ class wavernn_cell(RNNCell):
                 self.current_input = self.container(
                     coarse=self.current_input[1],
                     fine=self.current_input[2])
-
-            coarse_output, coarse_state = self.coarse_cell(
-                coarse_input, state.coarse, scope="{}/coarse".format(scope))
-
-            if not self.is_gt:
-                coarse_scaled = tf.reduce_max(tf.nn.softmax(coarse_output),
-                                              axis=1, name="reduction/coarse")/256
+            else:
+                coarse_scaled = tf.divide(
+                    tf.reduce_max(
+                        tf.nn.softmax(coarse_output), axis=1),
+                    y=256, name="reduction/coarse")
 
                 fine_input = tf.stack([self.current_input[0],
                                        self.current_input[1],
                                        coarse_scaled], axis=-1,
                                       name="input/fine/out")
 
-                fine_output, fine_state = self.fine_cell(
-                    fine_input, state.fine, scope"{}/fine".format(scope))
+            fine_output, fine_state = self.fine_cell(
+                fine_input, state.fine, scope"{}/fine".format(scope))
 
-                fine_scaled = tf.reduce_max(tf.nn.softmax(fine_output),
-                                            axis=1, name="reduction/fine")/256
+            if not self.is_train:
+
+                fine_scaled = tf.divide(
+                    tf.reduce_max(
+                        tf.nn.softmax(fine_output),
+                        axis=1),
+                    y=256, name="reduction/fine")
 
                 self.current_input = self.container(
                     coarse=coarse_scaled, fine=fine_scaled)
