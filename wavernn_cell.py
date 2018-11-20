@@ -5,6 +5,7 @@ from tensorflow.python.framework.ops import name_scope
 from tensorflow.python.ops import array_ops, math_ops, nn_ops
 from tensorflow.python.layers import core
 from collections import namedtuple
+import tensorflow as tf
 
 
 class wavernn_cell(RNNCell):
