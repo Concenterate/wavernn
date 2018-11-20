@@ -52,26 +52,26 @@ def mel_spectogram(data, filter_bank):
     mel = np.dot(filter_bank, np.abs(Fd))
     mel_in_db = librosa.core.amplitude_to_db(mel, top_db=params.max_db)
     normalized = (mel_in_db+params.max_db)/params.max_db
-    return normalized
+    return normalized.T
 
 
 def process_individual_file(input_file_uri, index):
 
     data = import_data(input_file_uri)
 
-    mfcc = mel_spectogram(data, filter_bank)
+    mel_spec = mel_spectogram(data, filter_bank)
 
-    mfcc_shape = mfcc.shape
-    num_elem_in_mfcc = mfcc_shape[0]*mfcc_shape[1]
-    pad_val = params.scale_factor*num_elem_in_mfcc - data.shape[0]
+    mel_spec_shape = mel_spec.shape
+    num_elem_in_mel_spec = mel_spec_shape[0]*mel_spec_shape[1]
+    pad_val = params.scale_factor*num_elem_in_mel_spec - data.shape[0]
     data = np.pad(data, [0, pad_val], mode="constant")
-    assert data.shape[0] % num_elem_in_mfcc == 0
 
     inpt, gt = sample_data(data)
 
     output_file_uri = os.path.join(
         training_data_folder, "sample_{}".format(index))
-    np.savez_compressed(output_file_uri, input=inpt, ground_truth=gt)
+    np.savez_compressed(output_file_uri, input=inpt,
+                        ground_truth=gt, mel=mel_spec)
 
     return None
 
@@ -80,12 +80,13 @@ def preprocess(input_folders):
     concurrent_executor = ProcessPoolExecutor(
         max_workers=params.num_of_workers)
 
-    source_files = list(chain.from_iterable([glob(source_folder+"/*.wav")
-                                             for source_folder in input_folders]))
+    source_files = list(chain.from_iterable(
+        [glob(source_folder+"/*.wav") for source_folder in input_folders]))
 
     indices = np.arange(len(source_files))
 
-    for e in tqdm(concurrent_executor.map(process_individual_file, source_files, indices)):
+    for e in tqdm(concurrent_executor.map(process_individual_file,
+                                          source_files, indices)):
         continue
 
 

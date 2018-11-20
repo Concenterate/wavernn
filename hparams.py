@@ -14,7 +14,7 @@ class params:
     num_mels = 64
     checkpoint_every = 100
     input_data_dirs = ["/home/pravesh/speech_dataset/speakers/3", ]
-    train_data_dir = "training_data/"
+    train_data_dir = "training_data"
     log_dir = "log/"
 
     # taken from tacotron2 project
@@ -28,6 +28,7 @@ class params:
     scale_factor = int(hop_size/num_mels)
 
     # specific to rnn@896
-    cells = [896, 896]
-    dense_layer = [256]
-    max_sequence_length = 1024
+    seq_cells = [128, 512]
+    rnn_resolution = 256
+    seq_length = 2048
+    prenet_dropout = 0.2
