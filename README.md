@@ -19,7 +19,7 @@ These points provides an intution about the model, how the model has been implen
 ## Tasks
 - [x] Basic implementation, which improves net algorithmic efficiency
 - [ ] Providing support for faster future prediction (On-going)
-- [x] Transfer from notebook based development to OOPS, for better management (WIP)
+- [x] Transfer from notebook based developaramsent to OOPS, for better management (WIP)
 - [ ] Sparse Prunification and Sub batched sampling
 - [x] Vocoder Implementation
 
