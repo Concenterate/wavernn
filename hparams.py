@@ -30,5 +30,5 @@ class params:
     # specific to rnn@896
     seq_cells = [128, 512]
     rnn_resolution = 256
-    seq_length = 2048
+    seq_length = 1024
     prenet_dropout = 0.2
