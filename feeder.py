@@ -2,7 +2,7 @@ import os
 from glob import glob
 import tensorflow as tf
 import numpy as np
-from wavernn.hparams import params
+from root.common.hparams import params
 
 
 class input_feeder:
