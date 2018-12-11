@@ -1,14 +1,6 @@
-
-"""
-
-    This file contains all of the hyper parameters used by the wavernn model.
-
-"""
-
-
 class params:
     epochs = 10
-    sample_rate = 22050  # 22KHz audio
+    sample_rate = 22050
     nFft = 1024
     hop_size = 256
     num_mels = 64
@@ -17,18 +9,18 @@ class params:
     train_data_dir = "training_data"
     log_dir = "log/"
 
-    # taken from tacotron2 project
     fmin = 125
     fmax = 7800
     max_db = 100
 
-    # specific to preprocessing
     num_of_workers = 8
     bit_rate_in_power = 16
     scale_factor = int(hop_size/num_mels)
 
-    # specific to rnn@896
-    seq_cells = [128, 512]
+    seq_cells = [128, 128]
     rnn_resolution = 256
     seq_length = 1024
     prenet_dropout = 0.2
+    max_input_sequence = 5
+
+    using_gpu = True

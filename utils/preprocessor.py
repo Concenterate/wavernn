@@ -7,8 +7,8 @@ import os
 from tqdm import tqdm
 from root.common.hparams import params
 from itertools import chain
-import matplotlib
-import matplotlib.pyplot as plt
+# import matplotlib
+# import matplotlib.pyplot as plt
 # matplotlib.use('GTK')
 
 # sample the data into bit rate
@@ -26,6 +26,8 @@ filter_bank = librosa.filters.mel(sr=params.sample_rate,
                                   n_mels=params.num_mels,
                                   fmin=params.fmin,
                                   fmax=params.fmax)
+# input_split_factor
+inpt_split_factor = params.sample_rate * params.max_input_sequence
 
 
 def sample_data(linear):
@@ -33,9 +35,11 @@ def sample_data(linear):
     bit_16_signal = scale_factor*(linear+1)
     coarse_linear, fine_linear = np.divmod(bit_16_signal, split_factor)
 
-    padded_coarse = np.insert((coarse_linear/second_split - 1)[:-1], 0, 0)
-    padded_fine = np.insert((fine_linear/second_split - 1)[:-1], 0, 0)
+    # padded_coarse = np.insert((coarse_linear/second_split - 1)[:-1], 0, 0)
+    # padded_fine = np.insert((fine_linear/second_split - 1)[:-1], 0, 0)
 
+    padded_coarse = (coarse_linear/second_split - 1)
+    padded_fine = (fine_linear/second_split - 1)
     pad_input = np.stack([padded_coarse, padded_fine], axis=0)
     ground_truth = np.stack([coarse_linear, fine_linear], axis=0)
 
@@ -44,7 +48,9 @@ def sample_data(linear):
 
 def import_data(file_name):
 
-    return librosa.core.load(file_name)[0]
+    file_data = librosa.core.load(file_name)[0]
+    num_splits = np.ceil(len(file_data) / inpt_split_factor)
+    return np.array_split(file_data, num_splits)
 
 
 def mel_spectogram(data, filter_bank):
@@ -57,23 +63,23 @@ def mel_spectogram(data, filter_bank):
 
 def process_individual_file(input_file_uri, index):
 
-    data = import_data(input_file_uri)
+    data_ary = import_data(input_file_uri)
 
-    mel_spec = mel_spectogram(data, filter_bank)
+    for sub_index, data in enumerate(data_ary):
 
-    mel_spec_shape = mel_spec.shape
-    num_elem_in_mel_spec = mel_spec_shape[0]*mel_spec_shape[1]
-    pad_val = params.scale_factor*num_elem_in_mel_spec - data.shape[0]
-    data = np.pad(data, [0, pad_val], mode="constant")
+        mel_spec = mel_spectogram(data, filter_bank)
 
-    inpt, gt = sample_data(data)
+        mel_spec_shape = mel_spec.shape
+        num_elem_in_mel_spec = mel_spec_shape[0]*mel_spec_shape[1]
+        pad_val = params.scale_factor*num_elem_in_mel_spec - data.shape[0]
+        data = np.pad(data, [0, pad_val], mode="constant")
 
-    output_file_uri = os.path.join(
-        training_data_folder, "sample_{}".format(index))
-    np.savez_compressed(output_file_uri, input=inpt,
-                        ground_truth=gt, mel=mel_spec)
+        inpt, gt = sample_data(data)
 
-    return None
+        output_file_uri = os.path.join(
+            training_data_folder, "sample_{}_{}".format(index, sub_index))
+        np.savez_compressed(output_file_uri, input=inpt,
+                            ground_truth=gt, mel=mel_spec)
 
 
 def preprocess(input_folders):
