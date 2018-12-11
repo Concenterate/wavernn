@@ -1,11 +1,13 @@
+import tensorflow as tf
+from collections import namedtuple
+from tensorflow.python.layers import core
+from tensorflow.python.ops import array_ops, math_ops, nn_ops
+from tensorflow.python.framework.ops import name_scope
+from tensorflow.python.ops.variable_scope import variable_scope
 from root.common.hparams import params
 from tensorflow.nn.rnn_cell import RNNCell, GRUCell, MultiRNNCell
-from tensorflow.python.ops.variable_scope import variable_scope
-from tensorflow.python.framework.ops import name_scope
-from tensorflow.python.ops import array_ops, math_ops, nn_ops
-from tensorflow.python.layers import core
-from collections import namedtuple
-import tensorflow as tf
+from tensorflow.contrib.cudnn_rnn import CudnnGRU
+# tf.contrib.rnn.GRUBlockCellV2
 
 
 class wavernn_cell(RNNCell):
@@ -63,19 +65,22 @@ class wavernn_cell(RNNCell):
     def __call__(self, input_data, state, scope="wavernn_cell"):
 
         with name_scope(scope):
+
+            # with tf.device('/cpu:0'):
             coarse_input = array_ops.stack([self.current_input[0],
-                                            self.current_input[1],
-                                            input_data[0]], axis=-1,
+                                            self.current_input[1]],
+                                           axis=-1,
                                            name="input/coarse")
 
-            coarse_output, coarse_state = self.coarse_cell(
-                coarse_input, state.coarse,
-                scope="{}/coarse".format(scope))
-
-            coarse_output = core.dense(inputs=coarse_output,
-                                       units=params.rnn_resolution)
+            with variable_scope("coarse"):
+                coarse_output, coarse_state = self.coarse_cell(
+                    coarse_input, state.coarse,
+                    scope="{}/coarse".format(scope))
+                coarse_output = core.dense(inputs=coarse_output,
+                                           units=params.rnn_resolution)
 
             if self.is_train:
+                # with tf.device('/cpu:0'):
                 fine_input = array_ops.stack([self.current_input[0],
                                               self.current_input[1],
                                               input_data[1]], axis=-1,
@@ -89,17 +94,18 @@ class wavernn_cell(RNNCell):
                     math_ops.reduce_max(
                         nn_ops.softmax(coarse_output), axis=1),
                     y=256, name="reduction/coarse")
-
+                # with tf.device('/cpu:0'):
                 fine_input = array_ops.stack([self.current_input[0],
                                               self.current_input[1],
                                               coarse_scaled], axis=-1,
                                              name="input/fine/out")
 
-            fine_output, fine_state = self.fine_cell(
-                fine_input, state.fine, scope="{}/fine".format(scope))
+            with variable_scope("fine"):
+                fine_output, fine_state = self.fine_cell(
+                    fine_input, state.fine, scope="{}/fine".format(scope))
 
-            fine_output = core.dense(inputs=fine_output,
-                                     units=params.rnn_resolution)
+                fine_output = core.dense(inputs=fine_output,
+                                         units=params.rnn_resolution)
 
             if not self.is_train:
 
